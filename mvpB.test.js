@@ -1,6 +1,6 @@
-import React from 'react'
-import { render, screen } from '@testing-library/react'
-import '@testing-library/jest-dom'
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect'; // This is needed for the toBeInTheDocument matcher
 
 describe('Sprint 7 Challenge Learner Tests', () => {
   /*
@@ -14,6 +14,13 @@ describe('Sprint 7 Challenge Learner Tests', () => {
     [4] sum('1', 2) // returns 3
     [5] sum('10', '3') // returns 13
   */
+  test('sum function', () => {
+    expect(() => sum()).toThrow('pass valid numbers');
+    expect(() => sum(2, 'seven')).toThrow('pass valid numbers');
+    expect(sum(1, 3)).toBe(4);
+    expect(sum('1', 2)).toBe(3);
+    expect(sum('10', '3')).toBe(13);
+  });
 
   /*
   👉 TASK 2 - Integration Testing of HelloWorld component at the bottom of this module
@@ -29,18 +36,24 @@ describe('Sprint 7 Challenge Learner Tests', () => {
     [5] renders a text that reads "JavaScript is pretty awesome"
     [6] renders a text that includes "javaScript is pretty" (use exact = false)
   */
-  test('you can comment out this test', () => {
-    expect(true).toBe(false)
-  })
-})
+  test('HelloWorld component', () => {
+    render(<HelloWorld />);
+    expect(screen.getByText('Home')).toBeInTheDocument();
+    expect(screen.getByText('About')).toBeInTheDocument();
+    expect(screen.getByText('Blog')).toBeInTheDocument();
+    expect(screen.getByText('The Truth')).toBeInTheDocument();
+    expect(screen.getByText('JavaScript is pretty awesome')).toBeInTheDocument();
+    expect(screen.getByText(/javaScript is pretty/i)).toBeInTheDocument();
+  });
+});
 
 function sum(a, b) {
-  a = Number(a)
-  b = Number(b)
+  a = Number(a);
+  b = Number(b);
   if (isNaN(a) || isNaN(b)) {
-    throw new Error('pass valid numbers')
+    throw new Error('pass valid numbers');
   }
-  return a + b
+  return a + b;
 }
 
 function HelloWorld() {
@@ -59,5 +72,5 @@ function HelloWorld() {
         </section>
       </main>
     </div>
-  )
+  );
 }

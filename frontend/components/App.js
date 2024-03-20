@@ -17,8 +17,7 @@ function App() {
         <Route path="/order" element={<Form />}/>
       </Routes>
       {/* Route and Routes here */}
-      <Home />
-      <Form />
+     
     </div>
   )
 }
