@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect'; // This is needed for the toBeInTheDocument matcher
+import '@testing-library/jest-dom'; // This is needed for the toBeInTheDocument matcher
 
 describe('Sprint 7 Challenge Learner Tests', () => {
   /*
