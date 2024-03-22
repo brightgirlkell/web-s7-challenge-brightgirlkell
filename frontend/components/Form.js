@@ -1,118 +1,131 @@
-import React, { useState } from 'react';
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import * as yup from 'yup';
 
+// 👇 Here are the validation errors you will use with Yup.
 const validationErrors = {
-  fullNameTooShort: 'Full name must be at least 3 characters',
-  fullNameTooLong: 'Full name must be at most 20 characters',
-  sizeIncorrect: 'Size must be S or M or L'
+ fullNameTooShort: "full name must be at least 3 characters",
+ fullNameTooLong: "full name must be at most 20 characters",
+ sizeIncorrect: "size must be S or M or L",
 };
 
+// 👇 Here you will create your schema.
+const formSchema = yup.object().shape({
+ fullName: yup.string()
+ .required()
+ .min(3, validationErrors.fullNameTooShort)
+ .max(20, validationErrors.fullNameTooLong),
+ size: yup.string()
+ .required()
+ .oneOf(['S', 'M', 'L'], validationErrors.sizeIncorrect)
+});
+
+
+// 👇 This array could help you construct your checkboxes using .map in the JSX.
 const toppings = [
-  { topping_id: '1', text: 'Pepperoni' },
-  { topping_id: '2', text: 'Green Peppers' },
-  { topping_id: '3', text: 'Pineapple' },
-  { topping_id: '4', text: 'Mushrooms' },
-  { topping_id: '5', text: 'Ham' },
+ { topping_id: "1", text: "Pepperoni" },
+ { topping_id: "2", text: "Green Peppers" },
+ { topping_id: "3", text: "Pineapple" },
+ { topping_id: "4", text: "Mushrooms" },
+ { topping_id: "5", text: "Ham" },
 ];
 
-const Form = () => {
-  const [fullName, setFullName] = useState('');
-  const [size, setSize] = useState('');
-  const [toppingSelection, setToppingSelection] = useState([]);
-  const [errors, setErrors] = useState({});
-
-  const validate = () => {
-    const errors = {};
-    if (fullName.length < 3) {
-      errors.fullName = validationErrors.fullNameTooShort;
-    } else if (fullName.length > 20) {
-      errors.fullName = validationErrors.fullNameTooLong;
-    }
-    if (!['S', 'M', 'L'].includes(size)) {
-      errors.size = validationErrors.sizeIncorrect;
-    }
-    if (toppingSelection.length === 0) {
-      errors.toppings = 'Please select at least one topping';
-    }
-    setErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validate()) {
-      console.log({ fullName, size, toppingSelection });
-      // Handle form submission here
-    }
-  };
-
-  const handleCheckboxChange = (toppingId) => {
-    setToppingSelection((prevSelection) => {
-      if (prevSelection.includes(toppingId)) {
-        return prevSelection.filter((id) => id !== toppingId);
-      } else {
-        return [...prevSelection, toppingId];
-      }
-    });
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <h2>Order Your Pizza</h2>
-      {/* Placeholder for success and failure messages */}
-      {true && <div className='success'>Thank you for your order!</div>}
-      {false && <div className='failure'>Something went wrong</div>}
-
-      <div className="input-group">
-        <div>
-          <label htmlFor="fullName">Full Name</label><br />
-          <input
-            id="fullName"
-            name="fullName"
-            type="text"
-            placeholder="Type full name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-          />
-          {errors.fullName && <div className='error'>{errors.fullName}</div>}
-        </div>
-      </div>
-
-      <div className="input-group">
-        <div>
-          <label htmlFor="size">Size</label><br />
-          <select
-            id="size"
-            name="size"
-            value={size}
-            onChange={(e) => setSize(e.target.value)}
-          >
-            <option value="">----Choose Size----</option>
-            <option value="S">Small</option>
-            <option value="M">Medium</option>
-            <option value="L">Large</option>
-          </select>
-          {errors.size && <div className='error'>{errors.size}</div>}
-        </div>
-      </div>
-
-      <div className="input-group">
-        {toppings.map((topping) => (
-          <label key={topping.topping_id}>
-            <input
-              name={`toppings.${topping.topping_id}`}
-              type="checkbox"
-              checked={toppingSelection.includes(topping.topping_id)}
-              onChange={() => handleCheckboxChange(topping.topping_id)}
-            />
-            {topping.text}<br />
-          </label>
-        ))}
-        {errors.toppings && <div className='error'>{errors.toppings}</div>}
-      </div>
-
-      <input type="submit" disabled={Object.keys(errors).length > 0} />
-    </form>
-  );
+const initialFormValues = {
+ fullName: "",
+ size: "",
+ toppings: [],
 };
 
-export default Form;
+const initialErrorValues = {
+ fullName: '',
+ size: ''
+}
+
+export default function Form() {
+ const [formValues, setFormValues] = useState(initialFormValues);
+ const [message, setMessage] = useState('');
+ const [isDisabled, setIsDisabled] = useState(true);
+ const [errors, setErrors] = useState(initialErrorValues);
+
+ useEffect(() => {
+ formSchema.isValid(formValues).then((valid) => {
+ setIsDisabled(!valid)
+ })
+ }, [formValues])
+
+ const handleTextChange = (e) => {
+ const { id, value } = e.target;
+ setFormValues({ ...formValues, [id]: value });
+ yup.reach(formSchema, id).validate(value.trim())
+ .then(() => setErrors({...errors, [id]: ''}))
+ .catch((e) => setErrors({...errors, [id]: e.errors[0]}))
+ };
+
+ const handleCheckboxChange = (e) => {
+ const { id, checked } = e.target;
+ if (checked) {
+ const toppings = [...formValues.toppings, id];
+ setFormValues({...formValues, toppings: toppings});
+ } else {
+ const toppings = formValues.toppings.filter(item => item !== id);
+ setFormValues({...formValues, toppings: toppings});
+ }
+ }
+
+ const handleSubmit = async (e) => {
+ e.preventDefault();
+ const response = await axios.post('http://localhost:9009/api/order', formValues);
+ setMessage(response.data.message);
+ setFormValues(initialFormValues);
+ }
+
+ return (
+ <form onSubmit={handleSubmit}>
+ <h2>Order Your Pizza</h2>
+ {message && <div className="success">{message}</div>}
+
+ <div className="input-group">
+ <div>
+ <label htmlFor="fullName">Full Name</label>
+ <br />
+ <input
+ onChange={handleTextChange}
+ value={formValues.fullName}
+ placeholder="Type full name"
+ id="fullName"
+ type="text"
+ />
+ </div>
+ {errors.fullName && <div className="error">{errors.fullName}</div>}
+ </div>
+
+ <div className="input-group">
+ <div>
+ <label htmlFor="size">Size</label>
+ <br />
+ <select onChange={handleTextChange} value={formValues.size} id="size">
+ <option value="">----Choose Size----</option>
+ <option value="S">Small</option>
+ <option value="M">Medium</option>
+ <option value="L">Large</option>
+ {/* Fill out the missing options */}
+ </select>
+ </div>
+ {errors.size && <div className="error">{errors.size}</div>}
+ </div>
+
+ <div className="input-group">
+ {/* 👇 Maybe you could generate the checkboxes dynamically */}
+ {toppings.map((topping) => (
+ <label key={topping.topping_id}>
+ <input onChange={handleCheckboxChange} checked={formValues.toppings.includes(topping.topping_id)} id={topping.topping_id} type="checkbox" />
+ {topping.text}
+ <br />
+ </label>
+ ))}
+ </div>
+ {/* 👇 Make sure the submit stays disabled until the form validates! */}
+ <input disabled={isDisabled} type="submit" />
+ </form>
+ );
+}
